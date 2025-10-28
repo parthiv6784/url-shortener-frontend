@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔗 Simple URL Shortener App
 
-## Getting Started
+A full-stack **URL Shortener** built with **Next.js**, **Express.js**, and **MongoDB**.  
+It allows users to shorten long URLs, manage them via a personal dashboard, and track visit history.
 
-First, run the development server:
+---
 
+## 🚀 Features
+
+- 🔑 **User Authentication** using JWT (register, login, logout)
+- ✂️ **Shorten Long URLs** into unique short links
+- 📈 **Track Visits** for each short link
+- 🧾 **History Logging** for every action (create, edit, delete, visit)
+- 🗂️ **Dashboard** with table view of user’s links
+- 🛠️ **Edit / Delete** functionality for each URL
+- 🔒 Auth middleware for secure API routes
+- 🌐 Responsive frontend built with **Next.js + Tailwind CSS**
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Technology |
+|-------|-------------|
+| Frontend | Next.js 14, Tailwind CSS |
+| Backend | Node.js, Express.js |
+| Database | MongoDB (Mongoose ORM) |
+| Auth | JWT Tokens + Cookies |
+| Styling | Tailwind CSS |
+
+---
+## 🚀 Future Enhancements (If More Time Were Available)
+
+This project was designed as a one-day technical challenge MVP.  
+If more time were available, the following features would make the application production-ready, more insightful, and more user-friendly.
+
+### 🧾 1. QR Code Generation for Short Links
+- Generate downloadable QR codes for each short URL to make sharing easier.
+- Backend endpoint: `GET /links/:id/qrcode`
+- Implementation: Use `qrcode` or `qr-image` npm package to render PNG/SVG images.
+- Benefit: Users can print or scan codes to instantly reach the original URL.
+
+### 🌍 2. Advanced Analytics & Visitor Tracking
+- Record extended metadata for every visit:
+  - **Visitor IP**, **country**, **region**, **browser**, **device**, **referrer**, and **time spent**.
+- Store the data in a `visits` collection for detailed analytics dashboards.
+- Add map-based visualization and time-series charts (Recharts / Chart.js).
+- Benefit: Provides valuable insights for marketing and performance optimization.
+
+### 📈 3. Real-Time Dashboard & CSV Export
+- Create a `/dashboard` route that summarizes:
+  - Total visits per link
+  - Geo distribution
+  - Top referrers
+- Add export functionality to download analytics as CSV or Excel.
+- Benefit: Helps users monitor link performance easily.
+
+
+## ⚙️ Installation
+
+### 1️⃣ Clone the repo
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+git clone https://github.com/YOUR_USERNAME/url-shortener.git
+cd url-shortener
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
