@@ -33,7 +33,6 @@ It lets users shorten long links, log in to manage them, and track visits.
 
 If I had more time, I would like to add:
 
-* **QR Code Generation** – each short link gets a QR code
 * **Analytics** – show visitor details (IP, location, device, time spent)
 * **Dashboard Charts** – show visits and top referrers
 * **CSV Export** – export link analytics for records
