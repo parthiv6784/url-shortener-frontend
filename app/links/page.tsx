@@ -2,12 +2,30 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getData, deleteData, putData,postData } from "../../lib/apiMethods";
-import { ExternalLink, Edit2, Trash2, Save, X, Eye, Link as LinkIcon ,AlertTriangle } from "lucide-react";
+import { ExternalLink, Edit2, Trash2, Save, X, Eye, Link as LinkIcon ,AlertTriangle,Share2,Check,Copy ,QrCode, Download} from "lucide-react";
+import {
+  WhatsappShareButton,
+  WhatsappIcon,
+  FacebookShareButton,
+  FacebookIcon,
+  TelegramShareButton,
+  TelegramIcon,
+  EmailShareButton,
+  EmailIcon,
+} from "react-share";
 
 export default function LinksPage() {
   const [links, setLinks] = useState<any[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [newUrl, setNewUrl] = useState("");
+  const [shareUrl,setShareUrl]=useState("");
+  const [copied, setCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState("");
+   const [showShareModal, setShowShareModal] = useState(false);
+    const [qrCode, setQrCode] = useState("");
+  const [showQrOption, setShowQrOption] = useState(true);
+    const [id, setId] = useState("");
+  const [generatingQr, setGeneratingQr] = useState(false);
    const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: string; url: string }>({
     show: false,
     id: "",
@@ -30,13 +48,26 @@ export default function LinksPage() {
   window.open(href, "_blank", "noopener,noreferrer");
   toast.success("Redirecting...");
 };
- 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this link?")) return;
-    await deleteData(`/links/delete/${id}`);
-    toast.success("Link deleted");
-    fetchLinks();
+  const handleShareUrl = (shortId: string) => {
+    const href = `${baseUrl}/${shortId}`;
+    setShortUrl(shortId);
+    setShareUrl(href);
+    setShowShareModal(true);
+    setCopied(false);
   };
+
+  const handleCopy = () => {
+  navigator.clipboard.writeText(shareUrl);
+  setCopied(true);
+  toast.success("Short link copied!");
+};
+ 
+  // const handleDelete = async (id: string) => {
+  //   if (!confirm("Delete this link?")) return;
+  //   await deleteData(`/links/delete/${id}`);
+  //   toast.success("Link deleted");
+  //   fetchLinks();
+  // };
   const openDeleteModal = (id: string, url: string) => {
     setDeleteModal({ show: true, id, url });
   };
@@ -65,6 +96,40 @@ export default function LinksPage() {
    const cancelEdit = () => {
     setEditing(null);
     setNewUrl("");
+  };
+   const generateQrCode = async () => {
+    try {
+      setGeneratingQr(true);
+      const response = await postData(`/qr/${id}`);
+      setQrCode(response.qrCode);
+      setShowQrOption(false);
+      toast.success("QR code generated successfully!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to generate QR code");
+    } finally {
+      setGeneratingQr(false);
+    }
+  };
+    const downloadQrCode = () => {
+    const link = document.createElement('a');
+    link.href = qrCode;
+    link.download = `qr-code-${shortUrl}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("QR code downloaded!");
+  };
+  const copyQrCode = async () => {
+    try {
+      const response = await fetch(qrCode);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      toast.success("QR code copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy QR code");
+    }
   };
    return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -159,7 +224,13 @@ export default function LinksPage() {
                                 </button>
                               </>
                             ) : (
-                              <>
+                              <> <button
+                                  onClick={() =>{ handleShareUrl(link.shortId); setId(link._id)}}
+                                  className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                                  title="Share"
+                                >
+                                  <Share2 className="w-4 h-4" />
+                                </button>
                                 <button
                                   onClick={() => {
                                     setEditing(link._id);
@@ -247,6 +318,13 @@ export default function LinksPage() {
                         </div>
                         <div className="flex gap-2">
                           <button
+                              onClick={() =>{ handleShareUrl(link.shortId); setId(link._id)}}
+                            className="flex-1 flex items-center justify-center space-x-2 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            <span>Share</span>
+                          </button>
+                          <button
                             onClick={() => {
                               setEditing(link._id);
                               setNewUrl(link.originalUrl);
@@ -273,6 +351,129 @@ export default function LinksPage() {
           )}
         </div>
       </div>
+      {showShareModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-gradient-to-r from-blue-900 to-sky-400 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Share2 className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-bold">Share Link</h2>
+                </div>
+                <button
+                  onClick={() => {setShowShareModal(false); setQrCode(""); setShowQrOption(true);
+    setCopied(false);}}
+                  className="text-white hover:bg-white/20 p-1 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Short URL</label>
+                <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-4 border-2 border-sky-200">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => handleRedirect(shortUrl)}
+                      className="text-sky-700 font-semibold hover:text-sky-800 flex items-center space-x-2 flex-1 text-left"
+                    >
+                      <span className="truncate">{shortUrl}</span>
+                      <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+ {showQrOption && (
+  <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-4 border-2 border-sky-200">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-3">
+        <QrCode className="w-5 h-5 text-blue-700" />
+        <span className="text-sm font-semibold text-gray-700">
+         Do you want qrCode ?
+        </span>
+      </div>
+      <button
+        onClick={generateQrCode}
+        disabled={generatingQr}
+        className="px-4 py-2 bg-gradient-to-r from-[#0f172a] via-[#1e3a8a] to-[#38bdf8] hover:from-[#1e3a8a] hover:to-[#7dd3fc] text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
+      >
+        {generatingQr ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+        ) : (
+          "Generate QR"
+        )}
+      </button>
+    </div>
+  </div>
+)}
+{qrCode && (
+  <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-6 border-2 border-sky-200">
+    <label className="text-sm font-semibold text-gray-700 mb-3 block text-center">
+      Your QR Code
+    </label>
+    <div className="flex justify-center mb-4">
+      <img src={qrCode} alt="QR Code" className="w-48 h-48 rounded-lg shadow-lg" />
+    </div>
+    <div className="flex gap-3">
+      <button
+        onClick={downloadQrCode}
+        className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-[#0f172a] via-[#1e3a8a] to-[#38bdf8] hover:from-[#1e3a8a] hover:to-[#7dd3fc] text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+      >
+        <Download className="w-4 h-4" />
+        <span>Download</span>
+      </button>
+      <button
+        onClick={copyQrCode}
+        className="flex-1 flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition-colors duration-200"
+      >
+        <Copy className="w-4 h-4" />
+        <span>Copy</span>
+      </button>
+    </div>
+  </div>
+)}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCopy}
+                  className="flex-1 flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition-colors duration-200"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? "Copied!" : "Copy Link"}</span>
+                </button>
+
+                <button
+                  onClick={() => {setShowShareModal(false); setQrCode(""); setShowQrOption(true);
+    setCopied(false);}}
+                  className="flex-1 bg-gradient-to-r from-blue-900 to-sky-400 hover:from-blue-800 hover:to-sky-500 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Share via</p>
+                <div className="flex gap-3 justify-center">
+                  <WhatsappShareButton url={shareUrl} title="Check this link!">
+                    <WhatsappIcon size={44} round className="hover:scale-110 transition-transform duration-200" />
+                  </WhatsappShareButton>
+                  <FacebookShareButton url={shareUrl}>
+                    <FacebookIcon size={44} round className="hover:scale-110 transition-transform duration-200" />
+                  </FacebookShareButton>
+                  <TelegramShareButton url={shareUrl}>
+                    <TelegramIcon size={44} round className="hover:scale-110 transition-transform duration-200" />
+                  </TelegramShareButton>
+                  <EmailShareButton url={shareUrl} subject="Check out this link">
+                    <EmailIcon size={44} round className="hover:scale-110 transition-transform duration-200" />
+                  </EmailShareButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
        {deleteModal.show && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">

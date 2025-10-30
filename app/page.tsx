@@ -13,7 +13,7 @@ import {
   EmailShareButton,
   EmailIcon,
 } from "react-share";
-import { Link2, Copy, ExternalLink, Sparkles, Zap, Shield, Check } from "lucide-react";
+import { Link2, Copy, ExternalLink, Sparkles, Zap, Shield, Check,QrCode, Download } from "lucide-react";
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -23,6 +23,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
    const [copied, setCopied] = useState(false);
+  const [qrCode, setQrCode] = useState("");
+  const [showQrOption, setShowQrOption] = useState(true);
+  const [generatingQr, setGeneratingQr] = useState(false);
+  const [id,setId]=useState("");
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -45,6 +49,7 @@ export default function Home() {
       setShortUrl(redirectUrl);
       setOriginalUrl(url);
       setShowModal(true);
+      setId(data?.link?._id||data?._id);
       toast.success("Short link created successfully!");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Something went wrong");
@@ -75,6 +80,50 @@ export default function Home() {
   window.open(href, "_blank", "noopener,noreferrer");
   toast.success("Redirecting...");
 };
+ const generateQrCode = async () => {
+    try {
+      setGeneratingQr(true);
+      const response = await postData(`/qr/${id}`);
+      setQrCode(response.qrCode);
+      setShowQrOption(false);
+      toast.success("QR code generated successfully!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to generate QR code");
+    } finally {
+      setGeneratingQr(false);
+    }
+  };
+    const downloadQrCode = () => {
+    const link = document.createElement('a');
+    link.href = qrCode;
+    link.download = `qr-code-${shortUrl}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("QR code downloaded!");
+  };
+  const copyQrCode = async () => {
+    try {
+      const response = await fetch(qrCode);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      toast.success("QR code copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy QR code");
+    }
+  };
+  const handleDone=()=>{
+    setShowModal(false);
+    setUrl("");
+    setShortUrl("");
+    setOriginalUrl("");
+    setQrCode("");
+    setShowQrOption(true);
+    setCopied(false);
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
@@ -146,8 +195,8 @@ export default function Home() {
         </div>
       </div>
      {showModal && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
-    <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-2">
+    <div className="bg-white rounded-xl w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh] p-4">
       <div className="bg-gradient-to-r from-blue-900 to-sky-400 p-6 text-white">
         <div className="flex items-center space-x-3">
           <div className="bg-white/20 p-2 rounded-lg">
@@ -178,6 +227,55 @@ export default function Home() {
             </div>
           </div>
         </div>
+       {showQrOption && (
+  <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-4 border-2 border-sky-200">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-3">
+        <QrCode className="w-5 h-5 text-blue-700" />
+        <span className="text-sm font-semibold text-gray-700">
+         Do you want qrCode ?
+        </span>
+      </div>
+      <button
+        onClick={generateQrCode}
+        disabled={generatingQr}
+        className="px-4 py-2 bg-gradient-to-r from-[#0f172a] via-[#1e3a8a] to-[#38bdf8] hover:from-[#1e3a8a] hover:to-[#7dd3fc] text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
+      >
+        {generatingQr ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+        ) : (
+          "Generate QR"
+        )}
+      </button>
+    </div>
+  </div>
+)}
+{qrCode && (
+  <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-6 border-2 border-sky-200">
+    <label className="text-sm font-semibold text-gray-700 mb-3 block text-center">
+      Your QR Code
+    </label>
+    <div className="flex justify-center mb-4">
+      <img src={qrCode} alt="QR Code" className="w-48 h-48 rounded-lg shadow-lg" />
+    </div>
+    <div className="flex gap-3">
+      <button
+        onClick={downloadQrCode}
+        className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-[#0f172a] via-[#1e3a8a] to-[#38bdf8] hover:from-[#1e3a8a] hover:to-[#7dd3fc] text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+      >
+        <Download className="w-4 h-4" />
+        <span>Download</span>
+      </button>
+      <button
+        onClick={copyQrCode}
+        className="flex-1 flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition-colors duration-200"
+      >
+        <Copy className="w-4 h-4" />
+        <span>Copy</span>
+      </button>
+    </div>
+  </div>
+)}
         <div className="flex gap-3">
           <button
             onClick={handleCopy}
@@ -188,7 +286,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setShowModal(false)}
+            onClick={handleDone}
             className="flex-1 bg-gradient-to-r from-blue-900 to-sky-400 hover:from-blue-800 hover:to-sky-500 text-black font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
           >
             Done
